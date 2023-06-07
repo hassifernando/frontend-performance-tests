@@ -1,0 +1,5 @@
+/report
+package-lock.json
+/node_modules
+.history
+test2.js
