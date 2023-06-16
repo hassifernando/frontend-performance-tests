@@ -3,21 +3,6 @@ const fs = require('fs');
 const { url, strategy, informative } = require('../indexConfig');
 const path = require('path');
 
-/* 
-
-https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=https://www.example.com&strategy=mobile&category=performance&category=best-practices&category=seo&category=accessibility&category=pwa&locale=en_GB
-
-https://developers.google.com/speed/docs/insights/v5/reference/pagespeedapi/runpagespeed?hl=pt-br
-
-
-categories		
-	performance
-	accessibility
-	best-practices
-	seo
-	pwa
-*/
-
 async function measurePerformanceMetrics(url, strategy = 'desktop') {
           const params = `&category=performance&category=best-practices&category=seo&category=accessibility&category=pwa&locale=en_GB`;
           const apiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${url}&strategy=${strategy}${params}`;
@@ -26,31 +11,28 @@ async function measurePerformanceMetrics(url, strategy = 'desktop') {
           const loadingExperience = response.data.loadingExperience;
           const categoriesScore = response.data.lighthouseResult.categories;
 
-          //salvar o conteudo do response em um arquivo .json
-
+          // Save the content in a JSON const
           const jsonData = JSON.stringify(response.data);
           const dateRef = new Date();
           const sanitizedUrl = url.replace(/[:/]/g, '_');
-
           const fileName = `${sanitizedUrl}-${strategy}-${dateRef
                     .toISOString()
                     .replace(/:/g, '-')}.json`;
           const directoryPath = path.resolve(__dirname, '../report');
-
           const filePath = path.join(directoryPath, fileName);
+
           fs.writeFile(filePath, jsonData, (err) => {
                     if (err) {
                               console.error(
-                                        'Ocorreu um erro ao criar o arquivo:',
+                                        'An error occurred while creating the file:',
                                         err
                               );
                               return;
                     }
-                    console.log('Arquivo JSON criado e salvo com sucesso!');
+                    console.log('JSON file created and saved successfully!');
           });
 
-          //loadingExperience metrics
-
+          // LoadingExperience metrics
           const LARGEST_CONTENTFUL_PAINT_MS =
                     loadingExperience.metrics['LARGEST_CONTENTFUL_PAINT_MS']
                               .percentile / 1000;
@@ -70,15 +52,15 @@ async function measurePerformanceMetrics(url, strategy = 'desktop') {
                     loadingExperience.metrics['EXPERIMENTAL_TIME_TO_FIRST_BYTE']
                               .percentile / 1000;
 
-          //audits
+          // Audits
           const SPEEDINDEX = metrics['speed-index'].numericValue / 1000;
           const TOTALBLOCKINGTIME = metrics['total-blocking-time'].numericValue;
-          //retired
+          // Retired
           const TIMETOINTERACTIVE = metrics['interactive'].numericValue / 1000;
           const FIRSTMEANINGFULPAINT =
                     metrics['first-contentful-paint'].numericValue / 1000;
           const MAXFIRSTINPUTDELAY = metrics['max-potential-fid'].numericValue;
-          //categories score
+          // Categories score
           const performanceScore = categoriesScore['performance'].score * 100;
           const accessibilityScore =
                     categoriesScore['accessibility'].score * 100;
@@ -99,11 +81,11 @@ async function measurePerformanceMetrics(url, strategy = 'desktop') {
                     EXPERIMENTAL_TIME_TO_FIRST_BYTE,
                     SPEEDINDEX,
                     TOTALBLOCKINGTIME,
-                    //metrics retired
+                    // Metrics retired
                     TIMETOINTERACTIVE,
                     FIRSTMEANINGFULPAINT,
                     MAXFIRSTINPUTDELAY,
-                    //SCORES
+                    // Scores
                     performanceScore,
                     accessibilityScore,
                     bestpracticesScore,
@@ -119,19 +101,18 @@ async function measurePerformanceMetrics(url, strategy = 'desktop') {
                     (err) => {
                               if (err) {
                                         console.error(
-                                                  'Ocorreu um erro ao criar o arquivo:',
+                                                  'JSON file created and saved successfully!',
                                                   err
                                         );
                                         return;
                               }
                               console.log(
-                                        'Arquivo JSON apenas com os resultados criado e salvo com sucesso!'
+                                        'JSON file with the results only created and saved successfully!'
                               );
                     }
           );
 
-          //importar dados para o kibana
-
+          // Import data to Kibana
           const kibanaUrl = `http://localhost:9200/performance-frontend-tests/_doc`;
 
           try {
@@ -145,16 +126,13 @@ async function measurePerformanceMetrics(url, strategy = 'desktop') {
                                         },
                               }
                     );
-                    console.log('Dado importado com sucesso!');
-                    console.log(
-                              'ID do documento importado:',
-                              response.data._id
-                    );
+                    console.log('Data imported successfully!');
+                    console.log('Imported document ID:', response.data._id);
           } catch (error) {
-                    console.error('Erro ao importar o dado:', error);
+                    console.error('Error while importing the data:', error);
           }
 
-          //REVIEW
+          // REVIEW
           return {
                     LARGEST_CONTENTFUL_PAINT_MS,
                     FIRST_INPUT_DELAY_MS,
@@ -164,11 +142,11 @@ async function measurePerformanceMetrics(url, strategy = 'desktop') {
                     EXPERIMENTAL_TIME_TO_FIRST_BYTE,
                     SPEEDINDEX,
                     TOTALBLOCKINGTIME,
-                    //metrics retired
+                    // Metrics retired
                     TIMETOINTERACTIVE,
                     FIRSTMEANINGFULPAINT,
                     MAXFIRSTINPUTDELAY,
-                    //SCORES
+                    // Scores
                     performanceScore,
                     accessibilityScore,
                     bestpracticesScore,
